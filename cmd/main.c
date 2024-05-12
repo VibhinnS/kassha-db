@@ -2,16 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include "custom_getline.h"
 
-
-//check if client is Windows based or not
-#ifdef _WIN32
-#include <basetsd.h>
-#define BUFFER_SIZE 1024;
-typedef SSIZE_T CUSTOM_SSIZE_T;
-#else
-#include <unistd.h>
-#endif
 
 typedef struct
 {
@@ -33,44 +25,6 @@ void print_prompt() {
     printf("db > ");
 }
 
-CUSTOM_SSIZE_T custom_getline(char **lineptr, size_t *n, FILE *stream) {
-    size_t bufsize = 0;
-    CUSTOM_SSIZE_T characters_read = 0;
-    if (!lineptr || !n || !stream) {
-        return -1;
-    }
-
-    if (*lineptr == NULL || *n == 0) {
-        bufsize = BUFFER_SIZE;
-        *lineptr = (char *)malloc(bufsize * sizeof(char));
-        if(*lineptr == NULL) {
-            return -1;
-        }
-        *n = bufsize;
-    }
-
-    char *ptr = *lineptr;
-    int c;
-    while ((c = fgetc(stream)) != EOF) {
-        if (characters_read >= *n-1) {
-            bufsize += BUFFER_SIZE;
-            *lineptr = (char *)realloc(*lineptr, bufsize * sizeof(char));
-            if (*lineptr == NULL) {
-                return -1;
-            }
-            *n = bufsize;
-            ptr = *lineptr + characters_read;
-        }
-        *ptr++ = c;
-        characters_read++;
-        if (c=='\n') {
-            break;
-        }
-    }
-    *ptr = '\0';
-
-    return characters_read == 0 ? -1 : characters_read;
-}
 
 void read_input(InputBuffer* input_buffer) {
     CUSTOM_SSIZE_T bytes_read = 
@@ -95,6 +49,7 @@ int main(int argc, char* argv[]) {
     InputBuffer* input_buffer = new_input_buffer();
     while (true) {
         print_prompt();
+        fflush(stdout);
         read_input(input_buffer);
 
         if (strcmp(input_buffer->buffer, ".exit")==0) {
